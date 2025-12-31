@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import BottomNav from "@/components/ui/BottomNav";
 import PortfolioSummaryDisplay from "@/components/dashboard/PortfolioSummary";
 import StockCard from "@/components/dashboard/StockCard";
 import AddStockDialog from "@/components/ui/AddStockDialog";
 import StockDetail from "@/components/dashboard/StockDetail";
+import NewsFeed from "@/components/views/NewsFeed";
 import { usePortfolio } from "@/hooks/usePortfolio";
-import { CircuitBoard, Plus, RefreshCw } from "lucide-react";
+import { CircuitBoard, Plus, RefreshCw, Loader2 } from "lucide-react";
 
 export default function Home() {
   const {
@@ -21,8 +22,32 @@ export default function Home() {
     refreshPrices
   } = usePortfolio();
 
+  const [activeTab, setActiveTab] = useState("portfolio");
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [selectedStock, setSelectedStock] = useState<string | null>(null);
+
+  // News State
+  const [news, setNews] = useState<any[]>([]);
+  const [newsLoading, setNewsLoading] = useState(false);
+
+  // Fetch News when tab changes to 'news'
+  useEffect(() => {
+    if (activeTab === 'news' && news.length === 0) {
+      const fetchNews = async () => {
+        setNewsLoading(true);
+        try {
+          const res = await fetch('/api/news');
+          const data = await res.json();
+          setNews(data);
+        } catch (e) {
+          console.error("Failed to fetch news", e);
+        } finally {
+          setNewsLoading(false);
+        }
+      };
+      fetchNews();
+    }
+  }, [activeTab]);
 
   // Derived state for the summary view
   const isPositive = totalChangeAmount >= 0;
@@ -31,7 +56,7 @@ export default function Home() {
     <main className="min-h-screen relative pb-32 font-sans selection:bg-[var(--color-neon-green)] selection:text-black">
 
       {/* Header / Logo Area */}
-      <header className="pt-8 pb-4 px-6 flex items-center justify-between">
+      <header className="pt-8 pb-4 px-6 flex items-center justify-between sticky top-0 z-40 bg-black/50 backdrop-blur-md border-b border-white/5">
         {/* Logo */}
         <div className="flex items-center gap-2">
           <div className="relative">
@@ -47,66 +72,94 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={refreshPrices}
-            disabled={loading}
-            className={`p-2 rounded-full border border-white/10 text-zinc-400 hover:text-white hover:bg-white/5 transition-all ${loading ? "animate-spin" : ""}`}
-          >
-            <RefreshCw size={20} />
-          </button>
-          <button
-            onClick={() => setIsAddOpen(true)}
-            className="p-2 rounded-full bg-[var(--color-neon-green)] text-black hover:bg-[#2ed60f] transition-all shadow-[0_0_10px_rgba(57,255,20,0.3)]"
-          >
-            <Plus size={20} strokeWidth={3} />
-          </button>
-        </div>
+        {/* Action Buttons (Only show on Portfolio tab) */}
+        {activeTab === 'portfolio' && (
+          <div className="flex items-center gap-2 animate-in fade-in duration-300">
+            <button
+              onClick={refreshPrices}
+              disabled={loading}
+              className={`p-2 rounded-full border border-white/10 text-zinc-400 hover:text-white hover:bg-white/5 transition-all ${loading ? "animate-spin" : ""}`}
+            >
+              <RefreshCw size={20} />
+            </button>
+            <button
+              onClick={() => setIsAddOpen(true)}
+              className="p-2 rounded-full bg-[var(--color-neon-green)] text-black hover:bg-[#2ed60f] transition-all shadow-[0_0_10px_rgba(57,255,20,0.3)]"
+            >
+              <Plus size={20} strokeWidth={3} />
+            </button>
+          </div>
+        )}
       </header>
 
       {/* Main Content Container */}
-      <div className="px-4 max-w-md mx-auto space-y-6">
+      <div className="px-4 max-w-md mx-auto mt-6 space-y-6">
 
-        {/* Portfolio Summary Section */}
-        <section>
-          <PortfolioSummaryDisplay
-            totalValue={totalValue}
-            currency="SEK"
-            changeAmount={totalChangeAmount}
-            changePercent={totalChangePercent}
-            isPositive={isPositive}
-          />
-        </section>
+        {/* --- PORTFOLIO VIEW --- */}
+        {activeTab === 'portfolio' && (
+          <div className="space-y-6 animate-in slide-in-from-bottom-5 fade-in duration-500">
+            {/* Portfolio Summary Section */}
+            <section>
+              <PortfolioSummaryDisplay
+                totalValue={totalValue}
+                currency="SEK"
+                changeAmount={totalChangeAmount}
+                changePercent={totalChangePercent}
+                isPositive={isPositive}
+              />
+            </section>
 
-        {/* Stock List Section */}
-        <section>
-          {stocks.length === 0 ? (
-            <div className="text-center py-12 text-zinc-600 border border-dashed border-zinc-800 rounded-3xl">
-              <p>Your pocket is empty.</p>
-              <button onClick={() => setIsAddOpen(true)} className="mt-2 text-[var(--color-neon-green)] text-sm font-bold uppercase tracking-wider">
-                Add your first stock
-              </button>
-            </div>
-          ) : (
-            <div>
-              {stocks.map((stock) => (
-                <StockCard
-                  key={stock.id}
-                  stock={stock}
-                  onDelete={removeStock}
-                  isLoading={loading && stock.price === 0}
-                  onClick={(s) => setSelectedStock(s.ticker)}
-                />
-              ))}
-            </div>
-          )}
-        </section>
+            {/* Stock List Section */}
+            <section>
+              {stocks.length === 0 ? (
+                <div className="text-center py-12 text-zinc-600 border border-dashed border-zinc-800 rounded-3xl">
+                  <p>Your pocket is empty.</p>
+                  <button onClick={() => setIsAddOpen(true)} className="mt-2 text-[var(--color-neon-green)] text-sm font-bold uppercase tracking-wider">
+                    Add your first stock
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  {stocks.map((stock) => (
+                    <StockCard
+                      key={stock.id}
+                      stock={stock}
+                      onDelete={removeStock}
+                      isLoading={loading && stock.price === 0}
+                      onClick={(s) => setSelectedStock(s.ticker)}
+                    />
+                  ))}
+                </div>
+              )}
+            </section>
+          </div>
+        )}
+
+        {/* --- NEWS VIEW --- */}
+        {activeTab === 'news' && (
+          <div className="animate-in slide-in-from-bottom-5 fade-in duration-500">
+            <h2 className="text-2xl font-bold text-white mb-6 uppercase tracking-tight">Market Pulse</h2>
+            {newsLoading ? (
+              <div className="flex justify-center py-20">
+                <Loader2 className="animate-spin text-[var(--color-neon-green)]" size={32} />
+              </div>
+            ) : (
+              <NewsFeed news={news} />
+            )}
+          </div>
+        )}
+
+        {/* --- OTHER TABS (Placeholder) --- */}
+        {(activeTab === 'home' || activeTab === 'markets' || activeTab === 'settings') && (
+          <div className="text-center py-20 text-zinc-600 animate-in fade-in">
+            <p className="italic">Coming soon...</p>
+          </div>
+        )}
 
       </div>
 
       {/* Bottom Navigation */}
-      <BottomNav />
+      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
 
       {/* Add Dialog */}
       <AddStockDialog

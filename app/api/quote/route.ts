@@ -5,6 +5,9 @@ import YahooFinance from 'yahoo-finance2';
 const FINNHUB_API_KEY = process.env.FINNHUB_API_KEY;
 const FINNHUB_URL = 'https://finnhub.io/api/v1';
 
+// Debug Env
+console.log('[Quote API] Finnhub Key exists?', !!FINNHUB_API_KEY);
+
 // Fallback Configuration
 const FALLBACK_USD_SEK = 11.05;
 
