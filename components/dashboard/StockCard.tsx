@@ -6,9 +6,10 @@ interface StockCardProps {
     stock: EnrichedStock;
     onDelete?: (id: string) => void;
     isLoading?: boolean;
+    onClick?: (stock: EnrichedStock) => void;
 }
 
-export default function StockCard({ stock, onDelete, isLoading = false }: StockCardProps) {
+export default function StockCard({ stock, onDelete, isLoading = false, onClick }: StockCardProps) {
     // Skeleton Loading State
     if (isLoading) {
         return (
@@ -33,7 +34,10 @@ export default function StockCard({ stock, onDelete, isLoading = false }: StockC
         new Intl.NumberFormat('en-US', { style: 'decimal', minimumFractionDigits: 2 }).format(val);
 
     return (
-        <div className="group relative flex items-center justify-between p-4 bg-[var(--color-card-bg)] border border-[var(--color-border-subtle)] rounded-2xl mb-3 overflow-hidden">
+        <div
+            onClick={() => onClick && onClick(stock)}
+            className="group relative flex items-center justify-between p-4 bg-[var(--color-card-bg)] border border-[var(--color-border-subtle)] rounded-2xl mb-3 overflow-hidden cursor-pointer hover:border-white/10 transition-colors"
+        >
 
             {/* Left: Icon & Name */}
             <div className="flex items-center gap-4 relative z-10 pointer-events-none">

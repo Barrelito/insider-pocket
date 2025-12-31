@@ -5,6 +5,7 @@ import BottomNav from "@/components/ui/BottomNav";
 import PortfolioSummaryDisplay from "@/components/dashboard/PortfolioSummary";
 import StockCard from "@/components/dashboard/StockCard";
 import AddStockDialog from "@/components/ui/AddStockDialog";
+import StockDetail from "@/components/dashboard/StockDetail";
 import { usePortfolio } from "@/hooks/usePortfolio";
 import { CircuitBoard, Plus, RefreshCw } from "lucide-react";
 
@@ -21,6 +22,7 @@ export default function Home() {
   } = usePortfolio();
 
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [selectedStock, setSelectedStock] = useState<string | null>(null);
 
   // Derived state for the summary view
   const isPositive = totalChangeAmount >= 0;
@@ -70,7 +72,7 @@ export default function Home() {
         <section>
           <PortfolioSummaryDisplay
             totalValue={totalValue}
-            currency="SEK" // Defaulting to SEK for aggregation 
+            currency="SEK"
             changeAmount={totalChangeAmount}
             changePercent={totalChangePercent}
             isPositive={isPositive}
@@ -94,6 +96,7 @@ export default function Home() {
                   stock={stock}
                   onDelete={removeStock}
                   isLoading={loading && stock.price === 0}
+                  onClick={(s) => setSelectedStock(s.ticker)}
                 />
               ))}
             </div>
@@ -111,6 +114,14 @@ export default function Home() {
         onClose={() => setIsAddOpen(false)}
         onAdd={addStock}
       />
+
+      {/* Stock Detail View */}
+      {selectedStock && (
+        <StockDetail
+          ticker={selectedStock}
+          onClose={() => setSelectedStock(null)}
+        />
+      )}
 
       {/* Background Ambience */}
       <div className="fixed top-0 left-0 w-full h-screen pointer-events-none z-0 overflow-hidden">
