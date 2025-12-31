@@ -13,8 +13,13 @@ export default function PortfolioSummaryDisplay({
     currency,
     changeAmount,
     changePercent,
-    isPositive
-}: PortfolioSummaryDisplayProps) {
+    isPositive,
+    viewMode,
+    onViewChange
+}: PortfolioSummaryDisplayProps & {
+    viewMode: 'total' | 'stocks' | 'funds';
+    onViewChange: (mode: 'total' | 'stocks' | 'funds') => void;
+}) {
 
     const formatMoney = (val: number) =>
         new Intl.NumberFormat('sv-SE', { style: 'decimal', minimumFractionDigits: 0 }).format(val);
@@ -28,7 +33,25 @@ export default function PortfolioSummaryDisplay({
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-24 bg-white/5 blur-[50px] rounded-full pointer-events-none" />
 
             <div className="relative z-10 flex flex-col items-center text-center">
-                <h2 className="text-zinc-400 text-sm tracking-wide mb-2 uppercase font-medium">Total Portfolio Value</h2>
+                {/* View Toggles */}
+                <div className="flex gap-2 mb-4 p-1 bg-black/40 rounded-lg border border-white/5">
+                    {(['total', 'stocks', 'funds'] as const).map((mode) => (
+                        <button
+                            key={mode}
+                            onClick={() => onViewChange(mode)}
+                            className={`px-3 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider transition-all ${viewMode === mode
+                                ? 'bg-[var(--color-neon-green)] text-black shadow-[0_0_10px_rgba(46,214,15,0.3)]'
+                                : 'text-zinc-500 hover:text-white'
+                                }`}
+                        >
+                            {mode === 'total' ? 'Total' : mode === 'stocks' ? 'Aktier' : 'Fonder'}
+                        </button>
+                    ))}
+                </div>
+
+                <h2 className="text-zinc-400 text-sm tracking-wide mb-2 uppercase font-medium">
+                    {viewMode === 'total' ? 'Total Portfolio Value' : viewMode === 'stocks' ? 'Stock Holdings' : 'Fund Holdings'}
+                </h2>
 
                 <div className="font-mono-numbers text-5xl font-bold text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] tracking-tight">
                     {formatMoney(totalValue)} {currency}

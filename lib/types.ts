@@ -2,6 +2,7 @@ export interface Stock {
     id: string;
     name: string;
     ticker: string;
+    type: 'stock' | 'fund';
     price: number;
     currency: "SEK" | "USD" | string;
     changeAmount: number;
@@ -21,6 +22,7 @@ export interface PortfolioSummary {
 export interface PortfolioItem {
     id: string;
     ticker: string;
+    type?: 'stock' | 'fund'; // Optional for backward compatibility
     quantity: number;
     avgPrice: number;
 }

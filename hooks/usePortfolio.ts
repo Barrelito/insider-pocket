@@ -89,10 +89,11 @@ export function usePortfolio() {
     }, [initialized, items.length]);
 
     // Actions
-    const addStock = (ticker: string, quantity: number) => {
+    const addStock = (ticker: string, quantity: number, type: 'stock' | 'fund' = 'stock') => {
         const newItem: PortfolioItem = {
             id: crypto.randomUUID(),
             ticker: ticker.toUpperCase(),
+            type,
             quantity,
             avgPrice: 0
         };
@@ -106,11 +107,14 @@ export function usePortfolio() {
     // Compute Enriched Data
     const enrichedStocks: EnrichedStock[] = items.map(item => {
         const quote = prices[item.ticker];
+        const defaultType = item.type || 'stock'; // Backwards compatibility for old items
+
         if (!quote) {
             return {
                 id: item.id,
                 name: item.ticker,
                 ticker: item.ticker,
+                type: defaultType,
                 price: 0,
                 currency: '...',
                 changeAmount: 0,
@@ -131,12 +135,12 @@ export function usePortfolio() {
         if (quote.currency === 'USD') {
             sekValue = nativeValue * forexRate;
         }
-        // Add other currencies here if needed (EUR=X etc)
 
         return {
             id: item.id,
             name: quote.shortName,
             ticker: quote.symbol,
+            type: defaultType,
             price: quote.price,
             currency: quote.currency,
             changeAmount: quote.changeAmount,
@@ -150,23 +154,32 @@ export function usePortfolio() {
         };
     });
 
-    const totalValueSEK = enrichedStocks.reduce((sum, stock) => sum + stock.value, 0);
+    // Helper for calculating totals
+    const calculateTotals = (stocks: EnrichedStock[]) => {
+        const value = stocks.reduce((sum, s) => sum + s.value, 0);
 
-    // Calculate weighted daily change in SEK
-    // We need to approximation: ChangeSEK = ChangeNative * Quantity * Rate
-    const totalChangeAmountSEK = enrichedStocks.reduce((sum, stock) => {
-        const rate = stock.currency === 'USD' ? forexRate : 1;
-        return sum + (stock.changeAmount * stock.quantity * rate);
-    }, 0);
+        const changeAmountSEK = stocks.reduce((sum, s) => {
+            const rate = s.currency === 'USD' ? forexRate : 1;
+            return sum + (s.changeAmount * s.quantity * rate);
+        }, 0);
 
-    const portfolioPrevValue = totalValueSEK - totalChangeAmountSEK;
-    const totalChangePercent = portfolioPrevValue > 0 ? (totalChangeAmountSEK / portfolioPrevValue) * 100 : 0;
+        const prevValue = value - changeAmountSEK;
+        const changePercent = prevValue > 0 ? (changeAmountSEK / prevValue) * 100 : 0;
+
+        return { value, changeAmount: changeAmountSEK, changePercent };
+    };
+
+    const total = calculateTotals(enrichedStocks);
+    const sharesTotal = calculateTotals(enrichedStocks.filter(s => s.type === 'stock'));
+    const fundsTotal = calculateTotals(enrichedStocks.filter(s => s.type === 'fund'));
 
     return {
         stocks: enrichedStocks,
-        totalValue: totalValueSEK,
-        totalChangeAmount: totalChangeAmountSEK,
-        totalChangePercent,
+        totalValue: total.value,
+        totalChangeAmount: total.changeAmount,
+        totalChangePercent: total.changePercent,
+        sharesTotal,
+        fundsTotal,
         forexRate,
         loading,
         addStock,

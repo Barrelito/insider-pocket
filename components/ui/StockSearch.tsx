@@ -6,10 +6,11 @@ interface SearchResult {
     shortname: string;
     exchange: string;
     typeDisp: string;
+    type?: 'stock' | 'fund';
 }
 
 interface StockSearchProps {
-    onSelect: (ticker: string) => void;
+    onSelect: (val: { symbol: string, type?: 'stock' | 'fund' }) => void;
     initialValue?: string;
 }
 
@@ -69,7 +70,7 @@ export default function StockSearch({ onSelect, initialValue = "" }: StockSearch
 
     const handleSelect = (result: SearchResult) => {
         setQuery(result.symbol);
-        onSelect(result.symbol);
+        onSelect({ symbol: result.symbol, type: result.type });
         setIsOpen(false);
         setResults([]);
     };
@@ -83,7 +84,7 @@ export default function StockSearch({ onSelect, initialValue = "" }: StockSearch
                     onChange={(e) => {
                         const val = e.target.value;
                         setQuery(val);
-                        onSelect(val);
+                        onSelect({ symbol: val }); // Default to just symbol on manual type
                     }}
                     onFocus={() => {
                         if (query.length >= 3 && results.length > 0) {
@@ -118,7 +119,20 @@ export default function StockSearch({ onSelect, initialValue = "" }: StockSearch
                                 className="w-full text-left px-4 py-3 hover:bg-zinc-800 border-b border-zinc-800/50 last:border-0 transition-colors group"
                             >
                                 <div className="flex justify-between items-center">
-                                    <span className="text-sm font-bold text-white group-hover:text-[var(--color-neon-green)]">{result.symbol}</span>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm font-bold text-white group-hover:text-[var(--color-neon-green)]">{result.symbol}</span>
+                                        {/* Type Badge */}
+                                        {result.type === 'fund' && (
+                                            <span className="text-[9px] font-bold bg-blue-900/50 text-blue-200 px-1.5 py-0.5 rounded border border-blue-500/30">
+                                                FOND
+                                            </span>
+                                        )}
+                                        {result.type === 'stock' && (
+                                            <span className="text-[9px] font-bold bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded border border-zinc-700">
+                                                AKTIE
+                                            </span>
+                                        )}
+                                    </div>
                                     <span className="text-[10px] text-zinc-500 bg-zinc-950 px-1.5 py-0.5 rounded">{result.exchange}</span>
                                 </div>
                                 <div className="text-xs text-zinc-400 truncate mt-0.5">{result.shortname}</div>

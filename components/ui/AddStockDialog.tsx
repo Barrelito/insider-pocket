@@ -5,11 +5,12 @@ import StockSearch from "./StockSearch";
 interface AddStockDialogProps {
     isOpen: boolean;
     onClose: () => void;
-    onAdd: (ticker: string, quantity: number) => void;
+    onAdd: (ticker: string, quantity: number, type?: 'stock' | 'fund') => void;
 }
 
 export default function AddStockDialog({ isOpen, onClose, onAdd }: AddStockDialogProps) {
     const [ticker, setTicker] = useState("");
+    const [type, setType] = useState<'stock' | 'fund'>('stock');
     const [quantity, setQuantity] = useState("1");
 
     if (!isOpen) return null;
@@ -17,8 +18,9 @@ export default function AddStockDialog({ isOpen, onClose, onAdd }: AddStockDialo
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (ticker && quantity) {
-            onAdd(ticker, parseFloat(quantity));
+            onAdd(ticker, parseFloat(quantity), type);
             setTicker("");
+            setType("stock");
             setQuantity("1");
             onClose();
         }
@@ -48,7 +50,10 @@ export default function AddStockDialog({ isOpen, onClose, onAdd }: AddStockDialo
                     <div>
                         <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1.5">Asset Name / Ticker</label>
                         <StockSearch
-                            onSelect={(val) => setTicker(val)}
+                            onSelect={(val) => {
+                                setTicker(val.symbol);
+                                setType(val.type || 'stock');
+                            }}
                             initialValue={ticker}
                         />
                     </div>

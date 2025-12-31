@@ -16,6 +16,8 @@ export default function Home() {
     totalValue,
     totalChangeAmount,
     totalChangePercent,
+    sharesTotal,
+    fundsTotal,
     loading,
     addStock,
     removeStock,
@@ -23,11 +25,19 @@ export default function Home() {
   } = usePortfolio();
 
   const [activeTab, setActiveTab] = useState("portfolio");
+  const [viewMode, setViewMode] = useState<'total' | 'stocks' | 'funds'>('total');
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [selectedStock, setSelectedStock] = useState<string | null>(null);
 
   // Derived state for the summary view
-  const isPositive = totalChangeAmount >= 0;
+  const currentTotal = viewMode === 'total' ? totalValue : viewMode === 'stocks' ? sharesTotal.value : fundsTotal.value;
+  const currentChangeAmount = viewMode === 'total' ? totalChangeAmount : viewMode === 'stocks' ? sharesTotal.changeAmount : fundsTotal.changeAmount;
+  const currentChangePercent = viewMode === 'total' ? totalChangePercent : viewMode === 'stocks' ? sharesTotal.changePercent : fundsTotal.changePercent;
+  const isPositive = currentChangeAmount >= 0;
+
+  // Filter lists
+  const shareItems = stocks.filter(s => s.type === 'stock' || !s.type);
+  const fundItems = stocks.filter(s => s.type === 'fund');
 
   return (
     <main className="min-h-screen relative pb-32 font-sans selection:bg-[var(--color-neon-green)] selection:text-black">
@@ -78,11 +88,13 @@ export default function Home() {
             {/* Portfolio Summary Section */}
             <section>
               <PortfolioSummaryDisplay
-                totalValue={totalValue}
+                totalValue={currentTotal}
                 currency="SEK"
-                changeAmount={totalChangeAmount}
-                changePercent={totalChangePercent}
+                changeAmount={currentChangeAmount}
+                changePercent={currentChangePercent}
                 isPositive={isPositive}
+                viewMode={viewMode}
+                onViewChange={setViewMode}
               />
             </section>
 
@@ -92,20 +104,42 @@ export default function Home() {
                 <div className="text-center py-12 text-zinc-600 border border-dashed border-zinc-800 rounded-3xl">
                   <p>Your pocket is empty.</p>
                   <button onClick={() => setIsAddOpen(true)} className="mt-2 text-[var(--color-neon-green)] text-sm font-bold uppercase tracking-wider">
-                    Add your first stock
+                    Add your first asset
                   </button>
                 </div>
               ) : (
-                <div>
-                  {stocks.map((stock) => (
-                    <StockCard
-                      key={stock.id}
-                      stock={stock}
-                      onDelete={removeStock}
-                      isLoading={loading && stock.price === 0}
-                      onClick={(s) => setSelectedStock(s.ticker)}
-                    />
-                  ))}
+                <div className="space-y-8">
+                  {/* Shares Section */}
+                  {(viewMode === 'total' || viewMode === 'stocks') && shareItems.length > 0 && (
+                    <div>
+                      <h3 className="text-zinc-500 text-xs font-bold uppercase tracking-widest mb-3 ml-1">Aktier</h3>
+                      {shareItems.map((stock) => (
+                        <StockCard
+                          key={stock.id}
+                          stock={stock}
+                          onDelete={removeStock}
+                          isLoading={loading && stock.price === 0}
+                          onClick={(s) => setSelectedStock(s.ticker)}
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Funds Section */}
+                  {(viewMode === 'total' || viewMode === 'funds') && fundItems.length > 0 && (
+                    <div>
+                      <h3 className="text-zinc-500 text-xs font-bold uppercase tracking-widest mb-3 ml-1">Fonder</h3>
+                      {fundItems.map((stock) => (
+                        <StockCard
+                          key={stock.id}
+                          stock={stock}
+                          onDelete={removeStock}
+                          isLoading={loading && stock.price === 0}
+                          onClick={(s) => setSelectedStock(s.ticker)}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </section>

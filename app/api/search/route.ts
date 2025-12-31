@@ -25,13 +25,18 @@ export async function GET(request: Request) {
 
         if (data.result && data.result.length > 0) {
             const results = data.result
-                .filter((item: any) => item.type === 'Common Stock' || item.type === 'ETP')
+                .filter((item: any) =>
+                    item.type === 'Common Stock' ||
+                    item.type === 'ETP' ||
+                    item.type === 'Mutual Fund' // Allow funds
+                )
                 .slice(0, 10)
                 .map((item: any) => ({
                     symbol: item.symbol,
                     shortname: item.description || item.symbol,
                     exchange: item.displaySymbol?.split(':')[0] || 'US',
-                    typeDisp: item.type || 'Stock'
+                    typeDisp: item.type === 'Mutual Fund' ? 'Fond' : 'Stock',
+                    type: item.type === 'Mutual Fund' ? 'fund' : 'stock' // Internal type
                 }));
 
             console.log(`[Search API] Finnhub returned ${results.length} results`);

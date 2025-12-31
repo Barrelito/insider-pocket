@@ -104,6 +104,8 @@ export default function StockDetail({ ticker, onClose }: StockDetailProps) {
                         {(!data.insiderTransactions || data.insiderTransactions.length === 0) ? (
                             <div className="text-center py-8 text-zinc-600 italic">
                                 No recent insider activity detected.
+                                <br />
+                                <span className="text-xs not-italic text-zinc-700">(Common for Funds/ETFs)</span>
                             </div>
                         ) : (
                             data.insiderTransactions.map((t: InsiderTransaction, i: number) => (
