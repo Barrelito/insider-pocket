@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Plus, X } from "lucide-react";
+import StockSearch from "./StockSearch";
 
 interface AddStockDialogProps {
     isOpen: boolean;
@@ -32,7 +33,7 @@ export default function AddStockDialog({ isOpen, onClose, onAdd }: AddStockDialo
             />
 
             {/* Dialog */}
-            <div className="relative w-full max-w-sm bg-[#111] border border-white/10 rounded-3xl p-6 shadow-2xl overflow-hidden">
+            <div className="relative w-full max-w-sm bg-[#111] border border-white/10 rounded-3xl p-6 shadow-2xl overflow-visible">
                 {/* Green Glow effect */}
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[var(--color-neon-green)] to-transparent" />
 
@@ -45,14 +46,10 @@ export default function AddStockDialog({ isOpen, onClose, onAdd }: AddStockDialo
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1.5">Ticker Symbol</label>
-                        <input
-                            type="text"
-                            value={ticker}
-                            onChange={(e) => setTicker(e.target.value)}
-                            placeholder="e.g. TSLA, INVE-B.ST"
-                            className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-white placeholder-zinc-700 focus:outline-none focus:border-[var(--color-neon-green)] focus:ring-1 focus:ring-[var(--color-neon-green)] transition-all uppercase font-mono-numbers"
-                            autoFocus
+                        <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1.5">Asset Name / Ticker</label>
+                        <StockSearch
+                            onSelect={(val) => setTicker(val)}
+                            initialValue={ticker}
                         />
                     </div>
 
