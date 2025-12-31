@@ -1,0 +1,78 @@
+import { Stock, PortfolioSummary } from "./types";
+
+export const MOCK_PORTFOLIO_SUMMARY: PortfolioSummary = {
+    totalValue: 28500,
+    currency: "SEK",
+    dayChangeAmount: 1250,
+    dayChangePercent: 4.5,
+    isPositive: true,
+};
+
+export const MOCK_STOCKS: Stock[] = [
+    {
+        id: "investor",
+        name: "Investor B",
+        ticker: "INVE-B",
+        price: 210.50,
+        currency: "SEK",
+        changeAmount: 5.20,
+        changePercent: 2.5,
+        isPositive: true,
+        logoPlaceholder: "Iv",
+    },
+    {
+        id: "tesla",
+        name: "Tesla",
+        ticker: "TSLA",
+        price: 1250.00,
+        currency: "USD",
+        changeAmount: 15.00,
+        changePercent: 1.2,
+        isPositive: false, // Red
+        logoPlaceholder: "T",
+    },
+    {
+        id: "saab",
+        name: "Saab",
+        ticker: "SAAB-B",
+        price: 420.00,
+        currency: "SEK",
+        changeAmount: 8.40,
+        changePercent: 2.0,
+        isPositive: true,
+        logoPlaceholder: "Sb",
+    },
+    {
+        id: "ericsson",
+        name: "Ericsson B",
+        ticker: "ERIC-B",
+        price: 65.00,
+        currency: "SEK",
+        changeAmount: 0.50,
+        changePercent: 0.8,
+        isPositive: false,
+        logoPlaceholder: "Er",
+    },
+    {
+        id: "spotify",
+        name: "Spotify",
+        ticker: "SPOT",
+        price: 1100.00,
+        currency: "SEK",
+        changeAmount: 22.00,
+        changePercent: 2.0,
+        isPositive: true,
+        logoPlaceholder: "Sp",
+    },
+    {
+        id: "volvo",
+        name: "Volvo Car B",
+        ticker: "VOLCAR-B",
+        price: 45.00,
+        currency: "SEK",
+        changeAmount: 0.90,
+        changePercent: 2.0,
+        isPositive: true,
+        logoPlaceholder: "Vo",
+    },
+];
