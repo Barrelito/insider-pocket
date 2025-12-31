@@ -26,29 +26,6 @@ export default function Home() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [selectedStock, setSelectedStock] = useState<string | null>(null);
 
-  // News State
-  const [news, setNews] = useState<any[]>([]);
-  const [newsLoading, setNewsLoading] = useState(false);
-
-  // Fetch News when tab changes to 'news'
-  useEffect(() => {
-    if (activeTab === 'news' && news.length === 0) {
-      const fetchNews = async () => {
-        setNewsLoading(true);
-        try {
-          const res = await fetch('/api/news');
-          const data = await res.json();
-          setNews(data);
-        } catch (e) {
-          console.error("Failed to fetch news", e);
-        } finally {
-          setNewsLoading(false);
-        }
-      };
-      fetchNews();
-    }
-  }, [activeTab]);
-
   // Derived state for the summary view
   const isPositive = totalChangeAmount >= 0;
 
@@ -138,14 +115,8 @@ export default function Home() {
         {/* --- NEWS VIEW --- */}
         {activeTab === 'news' && (
           <div className="animate-in slide-in-from-bottom-5 fade-in duration-500">
-            <h2 className="text-2xl font-bold text-white mb-6 uppercase tracking-tight">Market Pulse</h2>
-            {newsLoading ? (
-              <div className="flex justify-center py-20">
-                <Loader2 className="animate-spin text-[var(--color-neon-green)]" size={32} />
-              </div>
-            ) : (
-              <NewsFeed news={news} />
-            )}
+            <h2 className="text-2xl font-bold text-white mb-6 uppercase tracking-tight">News</h2>
+            <NewsFeed />
           </div>
         )}
 
