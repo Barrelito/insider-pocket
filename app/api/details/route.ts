@@ -20,18 +20,30 @@ export async function GET(request: Request) {
 
     console.log(`[Details API] Fetching details for: ${ticker}`);
 
-    // B) Swedish/Nordic (.ST, .HE) -> Yahoo Finance (Hybrid/Stealth)
+    // B) Swedish/Nordic (.ST, .HE) -> Yahoo Finance (Hybrid/Stealth) + FI Scraper
     if (ticker.includes('.ST') || ticker.includes('.HE')) {
-        console.log(`[Details API] Routing ${ticker} to Yahoo (Stealth Mode)...`);
+        console.log(`[Details API] Routing ${ticker} to Yahoo (Stealth Mode) + FI Scraper...`);
 
-        // Try Manual Yahoo Fetch
+        // 1. Fetch Chart & Price from Yahoo
         const yahooData = await fetchFromYahooManual(ticker);
 
-        // If Yahoo fails (Rate Limited) OR success, we return it.
-        // BUT if it's the specific DEMO stock (INVE-B.ST) and it failed/mocking, ensures we send data.
-        if (yahooData.isError && (ticker === 'INVE-B.ST' || ticker === 'INVE B.ST')) {
-            console.log(`[Details API] Using DEMO MOCK for ${ticker}`);
-            return NextResponse.json(getMockInvestorData());
+        // 2. Fetch Insider Data from FI (if it's a Swedish .ST stock)
+        if (ticker.includes('.ST')) {
+            try {
+                // Dynamic import to avoid critical dependency issues if scraper fails
+                const { scrapeFiInsider } = await import('@/lib/fi-scraper');
+
+                // Use the company name from Yahoo (e.g., "Investor AB ser. B")
+                // The scraper handles cleaning (removing "AB", "ser. B", etc.)
+                const companyName = yahooData.price.shortName || ticker;
+                const transactions = await scrapeFiInsider(companyName);
+
+                if (transactions.length > 0) {
+                    yahooData.insiderTransactions = transactions;
+                }
+            } catch (e: any) {
+                console.error(`[Details API] Scraper Failed: ${e.message}`);
+            }
         }
 
         return NextResponse.json(yahooData);
