@@ -27,6 +27,9 @@ export default function NewsFeed() {
     const [error, setError] = useState<string | null>(null);
     const { stocks } = usePortfolio();
 
+    // Create a stable dependency key for stocks (avoid object reference loop)
+    const stocksKey = stocks.map(s => s.ticker).sort().join(',');
+
     // Fetch General News on mount
     useEffect(() => {
         fetchGeneralNews();
@@ -42,7 +45,7 @@ export default function NewsFeed() {
                 setLoading(false);
             }
         }
-    }, [activeTab, stocks]);
+    }, [activeTab, stocksKey]);
 
     // Reset loading when switching tabs
     useEffect(() => {

@@ -60,19 +60,22 @@ export async function GET(request: Request) {
             const results = await Promise.all(newsPromises);
             let allNews = results.flat();
 
+            // Deduplicate by ID
+            const uniqueNews = Array.from(new Map(allNews.map(item => [item.id, item])).values());
+
             // Sort by datetime (newest first)
-            allNews.sort((a, b) => b.datetime - a.datetime);
+            uniqueNews.sort((a: any, b: any) => b.datetime - a.datetime);
 
             // Apply Sentinel Analysis
-            allNews = applySentinelAnalysis(allNews, tickers);
+            const analyzedNews = applySentinelAnalysis(uniqueNews, tickers);
 
             // Limit to 20 items
-            allNews = allNews.slice(0, 20);
+            const finalNews = analyzedNews.slice(0, 20);
 
             // Update Cache
-            PORTFOLIO_NEWS_CACHE.set(cacheKey, { data: allNews, timestamp: now });
+            PORTFOLIO_NEWS_CACHE.set(cacheKey, { data: finalNews, timestamp: now });
 
-            return NextResponse.json(allNews);
+            return NextResponse.json(finalNews);
 
         } catch (error: any) {
             console.error('[News API] Portfolio News Error:', error.message);
