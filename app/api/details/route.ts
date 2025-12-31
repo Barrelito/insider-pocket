@@ -97,8 +97,22 @@ async function fetchFromFinnhub(ticker: string) {
 
         // Build Insider Transactions
         if (insiderData.data && insiderData.data.length > 0) {
+            // Known insiders mapping (for better UX)
+            const knownInsiders: Record<string, string> = {
+                'Musk Elon': 'CEO',
+                'Musk Kimbal': 'Director',
+                'DENHOLM ROBYN M': 'Chair of the Board',
+                'MURDOCH JAMES R': 'Director',
+                'Taneja Vaibhav': 'CFO',
+                'Ehrenpreis Ira Matthew': 'Director',
+                'Zhu Xiaotong': 'VP Engineering',
+                'Gebbia Joseph': 'Director',
+                'Wilson-Thompson Kathleen': 'Director',
+            };
+
             response.insiderTransactions = insiderData.data.slice(0, 10).map((t: any) => ({
                 holderName: t.name || 'Unknown',
+                role: knownInsiders[t.name] || '', // Use mapping or empty
                 transactionText: t.transactionCode === 'P' ? 'Purchase' : t.transactionCode === 'S' ? 'Sale' : t.transactionCode || 'Transaction',
                 date: t.transactionDate || 'N/A',
                 shares: t.share?.toLocaleString() || '0',
