@@ -28,4 +28,14 @@ export const FALLBACK_STOCKS = [
     // Indices
     { symbol: "^OMX", shortname: "OMX Stockholm 30", exchange: "STO", typeDisp: "Index", type: "stock" },
     { symbol: "^GSPC", shortname: "S&P 500", exchange: "SNP", typeDisp: "Index", type: "stock" },
+
+    // Swedish Funds (Popular)
+    { symbol: "0P00000KPB.ST", shortname: "Avanza Zero", exchange: "STO", typeDisp: "Mutual Fund", type: "fund" },
+    { symbol: "0P00000L1E.ST", shortname: "Spiltan Aktiefond Investmentbolag", exchange: "STO", typeDisp: "Mutual Fund", type: "fund" },
+    { symbol: "0P00000FYQ.ST", shortname: "Länsförsäkringar Global Index", exchange: "STO", typeDisp: "Mutual Fund", type: "fund" },
+    { symbol: "0P00000K21.ST", shortname: "Swedbank Robur Ny Teknik A", exchange: "STO", typeDisp: "Mutual Fund", type: "fund" },
+    { symbol: "0P00000XN0.ST", shortname: "AMF Aktiefond Global", exchange: "STO", typeDisp: "Mutual Fund", type: "fund" },
+    { symbol: "0P0000100D.ST", shortname: "TIN Ny Teknik A", exchange: "STO", typeDisp: "Mutual Fund", type: "fund" },
+    { symbol: "0P00000LF8.ST", shortname: "Avanza Global", exchange: "STO", typeDisp: "Mutual Fund", type: "fund" },
+    { symbol: "0P00006B0Z.ST", shortname: "Handelsbanken Global Index Criteria", exchange: "STO", typeDisp: "Mutual Fund", type: "fund" },
 ];
