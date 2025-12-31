@@ -24,6 +24,7 @@ export default function NewsFeed() {
     const [generalNews, setGeneralNews] = useState<NewsItem[]>([]);
     const [portfolioNews, setPortfolioNews] = useState<NewsItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const { stocks } = usePortfolio();
 
     // Fetch General News on mount
@@ -33,20 +34,37 @@ export default function NewsFeed() {
 
     // Fetch Portfolio News when tab switches to 'pocket' or stocks change
     useEffect(() => {
-        if (activeTab === 'pocket' && stocks.length > 0) {
-            fetchPortfolioNews();
+        if (activeTab === 'pocket') {
+            if (stocks.length > 0) {
+                fetchPortfolioNews();
+            } else {
+                // No stocks - just stop loading
+                setLoading(false);
+            }
         }
     }, [activeTab, stocks]);
 
+    // Reset loading when switching tabs
+    useEffect(() => {
+        if (activeTab === 'market') {
+            setLoading(generalNews.length === 0);
+        }
+    }, [activeTab]);
+
     const fetchGeneralNews = async () => {
+        setError(null);
         try {
             const res = await fetch('/api/news');
+            if (!res.ok) throw new Error(`API error: ${res.status}`);
             const data = await res.json();
             if (Array.isArray(data)) {
                 setGeneralNews(data);
+            } else if (data.error) {
+                throw new Error(data.error);
             }
-        } catch (e) {
+        } catch (e: any) {
             console.error('Failed to fetch general news', e);
+            setError(e.message || 'Failed to load news');
         } finally {
             setLoading(false);
         }
@@ -54,15 +72,20 @@ export default function NewsFeed() {
 
     const fetchPortfolioNews = async () => {
         setLoading(true);
+        setError(null);
         try {
             const tickers = stocks.map(s => s.ticker).join(',');
             const res = await fetch(`/api/news?tickers=${encodeURIComponent(tickers)}`);
+            if (!res.ok) throw new Error(`API error: ${res.status}`);
             const data = await res.json();
             if (Array.isArray(data)) {
                 setPortfolioNews(data);
+            } else if (data.error) {
+                throw new Error(data.error);
             }
-        } catch (e) {
+        } catch (e: any) {
             console.error('Failed to fetch portfolio news', e);
+            setError(e.message || 'Failed to load personalized news');
         } finally {
             setLoading(false);
         }
@@ -70,6 +93,7 @@ export default function NewsFeed() {
 
     const news = activeTab === 'market' ? generalNews : portfolioNews;
     const criticalNews = news.filter(item => item.isCritical);
+
 
     return (
         <div className="space-y-4 pb-24">
@@ -121,6 +145,19 @@ export default function NewsFeed() {
                 </div>
             )}
 
+            {/* Error State */}
+            {!loading && error && (
+                <div className="text-center py-12">
+                    <p className="text-red-400 mb-2">⚠️ {error}</p>
+                    <button
+                        onClick={() => activeTab === 'market' ? fetchGeneralNews() : fetchPortfolioNews()}
+                        className="text-sm text-[var(--color-neon-green)] underline hover:no-underline"
+                    >
+                        Try again
+                    </button>
+                </div>
+            )}
+
             {/* Empty State for My Pocket */}
             {!loading && activeTab === 'pocket' && stocks.length === 0 && (
                 <div className="text-center py-16">
@@ -158,8 +195,8 @@ function TabButton({ label, active, onClick }: { label: string; active: boolean;
         <button
             onClick={onClick}
             className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${active
-                    ? 'bg-[var(--color-neon-green)] text-black'
-                    : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                ? 'bg-[var(--color-neon-green)] text-black'
+                : 'text-zinc-400 hover:text-white hover:bg-white/5'
                 }`}
         >
             {label}
