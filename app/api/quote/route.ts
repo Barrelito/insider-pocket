@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
-import yahooFinance from 'yahoo-finance2';
+import YahooFinance from 'yahoo-finance2';
+
+// Create an instance of YahooFinance (required in v3)
+const yahooFinance = new YahooFinance();
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -10,15 +13,21 @@ export async function GET(request: Request) {
     }
 
     try {
-        // 1-month range, 1-day interval gives us ~20-30 data points for a smooth sparkline
-        const result = await yahooFinance.chart(ticker, { range: '1mo', interval: '1d' }) as any;
+        // Calculate period1 (30 days ago) and period2 (now)
+        const now = new Date();
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(now.getDate() - 30);
 
-        // The library returns an object with `meta` (current info) and `quotes` (history) or `timestamp`+`indicators`
-        // yahoo-finance2 chart result structure typically: { meta: {...}, quotes: [...] }
+        const result = await yahooFinance.chart(ticker, {
+            period1: thirtyDaysAgo,
+            period2: now,
+            interval: '1d'
+        }) as any;
+
         const meta = result.meta;
         const quotes = result.quotes || [];
 
-        // Filter nulls and extract closes
+        // Filter nulls and extract closes for sparkline
         const history = quotes
             .map((q: any) => q.close)
             .filter((c: any) => typeof c === 'number');
@@ -26,20 +35,19 @@ export async function GET(request: Request) {
         const data = {
             price: meta.regularMarketPrice,
             currency: meta.currency,
-            changePercent: meta.regularMarketPrice - meta.chartPreviousClose, // Calculate dynamically or use meta
-            changeAmount: meta.regularMarketPrice - meta.chartPreviousClose,
-            // Note: meta often has regularMarketPrice, but change info might need calculation if not explicit in meta
-            // Let's rely on meta's own change fields if available, otherwise calculate
+            changePercent: 0,
+            changeAmount: 0,
             shortName: meta.shortName || meta.longName || ticker,
             symbol: meta.symbol,
             history: history,
         };
 
-        // Refine change calculation if meta has it directly
-        // Usually chart meta has `chartPreviousClose` and `regularMarketPrice`
-        const diff = data.price - meta.chartPreviousClose;
-        data.changeAmount = diff;
-        data.changePercent = (diff / meta.chartPreviousClose) * 100;
+        // Calculate change from chartPreviousClose
+        if (meta.chartPreviousClose && meta.regularMarketPrice) {
+            const diff = data.price - meta.chartPreviousClose;
+            data.changeAmount = diff;
+            data.changePercent = (diff / meta.chartPreviousClose) * 100;
+        }
 
         return NextResponse.json(data);
     } catch (error) {
