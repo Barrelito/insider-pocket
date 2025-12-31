@@ -1,8 +1,8 @@
-
 import * as cheerio from 'cheerio';
 
 export interface InsiderTransaction {
     holderName: string;
+    role: string;  // NEW: Person's position (e.g., "VD", "Styrelseledamot")
     transactionText: string;
     date: string;
     shares: string;
@@ -12,13 +12,14 @@ export interface InsiderTransaction {
 
 export async function scrapeFiInsider(companyName: string): Promise<InsiderTransaction[]> {
     // 1. Clean the company name for better search results
-    // FI search is sensitive. "Investor AB" might fail if they list it as "Investor".
-    // Known patterns to remove: " AB", " publ", " ser. B", " ser. A", etc.
+    // FI search is sensitive. "Investor AB ser. B" should become just "Investor"
     const cleanName = companyName
         .replace(/ AB/gi, '')
         .replace(/ publ/gi, '')
-        .replace(/ ser\. [AB]/gi, '')
-        .replace(/ series [AB]/gi, '')
+        .replace(/ ser\.\s*[AB]/gi, '')
+        .replace(/ series\s*[AB]/gi, '')
+        .replace(/[-_]/g, ' ') // e.g., INVE-B -> INVE B
+        .split(' ')[0] // Take first word (e.g., "Investor" from "Investor AB ser. B")
         .trim();
 
     console.log(`[FI Scraper] Searching for: "${cleanName}" (Original: "${companyName}")`);
@@ -41,50 +42,52 @@ export async function scrapeFiInsider(companyName: string): Promise<InsiderTrans
         const $ = cheerio.load(html);
         const transactions: InsiderTransaction[] = [];
 
-        // 3. Parse the table
-        // The table class is usually 'search-results-table' or standard <table>
-        const rows = $('table tbody tr');
+        // 3. Parse the table (confirmed class: "table table-bordered table-hover table-striped")
+        // Column indexes (0-based):
+        //   0: Publiceringsdatum
+        //   2: Person i ledande ställning
+        //   5: Karaktär (Förvärv/Avyttring)
+        //   9: Transaktionsdatum (actual trade date)
+        //  10: Volym
+        const rows = $('table.table-bordered tbody tr');
+
+        console.log(`[FI Scraper] Found ${rows.length} rows in table.`);
 
         rows.each((i, row) => {
             if (transactions.length >= 10) return; // Limit to 10
 
             const cols = $(row).find('td');
-            if (cols.length < 5) return;
+            if (cols.length < 10) return; // Ensure we have enough columns
 
-            // Extract fields (indexes might vary, need to inspect FI structure dynamically or assume standard)
-            // Typically: Publiceringsdatum | Utgivare | Person | Befattning | Karaktär | ... | Volym | Pris
-
-            // Helpful debug to verify columns if scraping fails first time
-            // const debugText = $(row).text().trim();
-            // console.log(debugText);
-
-            const date = $(cols[0]).text().trim();
-            const person = $(cols[2]).text().trim();
-            const type = $(cols[4]).text().trim(); // Karaktär (Förvärv, Avyttring, etc)
-            const volumeStr = $(cols[6]).text().trim(); // Volym
-            // const priceStr = $(cols[7]).text().trim(); // Pris (Unused for now but good to have)
+            // Extract fields using CORRECT column indexes
+            const date = $(cols[9]).text().trim();        // Transaktionsdatum (actual trade date)
+            const person = $(cols[2]).text().trim();       // Person i ledande ställning
+            const role = $(cols[3]).text().trim();         // Befattning (e.g., "VD", "CFO")
+            const type = $(cols[5]).text().trim();         // Karaktär (Förvärv, Avyttring, etc)
+            const volumeStr = $(cols[10]).text().trim();   // Volym
 
             // 4. Normalize Data
             const isBuy = type.toLowerCase().includes('förvärv') || type.toLowerCase().includes('köp');
             const isSell = type.toLowerCase().includes('avyttring') || type.toLowerCase().includes('sälj');
 
             if (isBuy || isSell) {
-                // Normalize Volume (remove spaces/thousands separators)
-                const volumeClean = volumeStr.replace(/\s/g, '').replace(/,/g, '.'); // Handle "1 000" and "1,5"
+                // Normalize Volume (remove spaces used as thousands separators)
+                const volumeClean = volumeStr.replace(/\s/g, '').replace(/,/g, '.');
                 const volume = parseInt(volumeClean) || 0;
 
                 transactions.push({
-                    holderName: person,
+                    holderName: person || 'Unknown',
+                    role: role || '', // NEW: Include role
                     transactionText: isBuy ? 'Bought' : 'Sold',
-                    date: date.split(' ')[0], // Keep just YYYY-MM-DD
-                    shares: Math.abs(volume).toLocaleString(), // Format "10,000"
-                    value: 'N/A', // FI doesn't explicitly give Total Value, could calculate Pris * Volym if needed
+                    date: date || 'N/A',
+                    shares: Math.abs(volume).toLocaleString('sv-SE'), // Format with Swedish locale
+                    value: 'N/A', // FI doesn't explicitly give Total Value
                     isBuy: isBuy
                 });
             }
         });
 
-        console.log(`[FI Scraper] Found ${transactions.length} transactions.`);
+        console.log(`[FI Scraper] Extracted ${transactions.length} transactions.`);
         return transactions;
 
     } catch (error: any) {

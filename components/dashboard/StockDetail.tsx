@@ -4,6 +4,7 @@ import Sparkline from '@/components/ui/Sparkline';
 
 interface InsiderTransaction {
     holderName: string;
+    role?: string; // NEW: Person's position (e.g., "VD", "Styrelseledamot")
     transactionText: string;
     date: string;
     shares: string;
@@ -109,6 +110,7 @@ export default function StockDetail({ ticker, onClose }: StockDetailProps) {
                                 <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-zinc-900/50 border border-white/5">
                                     <div className="flex flex-col min-w-0 pr-2">
                                         <span className="text-white font-medium text-sm truncate">{t.holderName}</span>
+                                        {t.role && <span className="text-[10px] text-zinc-400 truncate">{t.role}</span>}
                                         <span className="text-[10px] text-zinc-500 uppercase tracking-wide">{t.transactionText} • {t.date}</span>
                                     </div>
                                     <div className={`text-right font-mono-numbers text-sm font-bold ${t.isBuy ? 'text-[var(--color-neon-green)]' : 'text-[var(--color-neon-red)]'}`}>
